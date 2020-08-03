@@ -4,6 +4,7 @@ import tkinter.filedialog
 from pathlib import Path
 # import os
 import tkinter.messagebox as tkmb
+import time
 
 
 class MainWindow(tk.Tk):
@@ -11,15 +12,18 @@ class MainWindow(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
 
-        # self.center_window_on_monitor()
-
-        self.geometry('400x200')
+        self.geometry('500x200')
         self.resizable(False, False)
         self.title('Simple Image Converter')
 
+        self.selected_image_types = {'input': False, 'output': False}
+        self.image_types = {
+            'input': ['jpg', 'png', 'webp', 'all'],
+            'output': ['jpg', 'png', 'webp']}
+
         rb1 = tk.Radiobutton(
-            self, text='Folder(s)',
-            command=lambda: self.change_convert_ready_status('Folder(s)', 0))
+            self, text='Folder',
+            command=lambda: self.change_convert_ready_status('Folder', 0))
         rb2 = tk.Radiobutton(
             self, text='File(s)',
             command=lambda: self.change_convert_ready_status('File(s)', 1))
@@ -29,8 +33,8 @@ class MainWindow(tk.Tk):
         self.l1 = tk.Label(self, text='No type selected', fg='red')
         self.l1.grid(row=1, column=2)
 
-        tk.Label(self, text='Input path:').grid(row=2, column=0)
-        tk.Label(self, text='Output path:').grid(row=3, column=0)
+        tk.Label(self, text='Input file/folder:').grid(row=2, column=0)
+        tk.Label(self, text='Output folder:').grid(row=3, column=0)
 
         self.b1 = tk.Button(self, text='Select path',
                             command=lambda: self.get_path('input'),
@@ -40,6 +44,14 @@ class MainWindow(tk.Tk):
                             state='disabled')
         self.b1.grid(row=2, column=1)
         self.b2.grid(row=3, column=1)
+
+        # TODO: Fix this damn bug where only the last item is selected..
+        for i, (k, v) in enumerate(self.image_types.items()):
+            for item in v:
+                rb = tk.Radiobutton(
+                    self, text=item,
+                    command=lambda: self.image_conversion_type(k, item))
+                rb.grid(row=i + 2, column=self.image_types[k].index(item) + 2)
 
         self.convert_button = tk.Button(
             self, text='Convert', command=self.file_conversion,
@@ -55,30 +67,43 @@ class MainWindow(tk.Tk):
             state='disabled'
         ).grid(row=4, column=1)
 
-    def get_path(self, directed_to: str):
-        if not self.files:
-            p = tkinter.filedialog.askdirectory(initialdir=Path.cwd())
+    def get_path(self, directed_to: str) -> None:
+        if directed_to == 'input':
+            if self.file_s:
+                p = tkinter.filedialog.askopenfilenames(initialdir=Path.cwd())
+
+            else:
+                p = tkinter.filedialog.askdirectory(initialdir=Path.cwd())
 
         else:
-            p = tkinter.filedialog.askopenfilename(initialdir=Path.cwd())
+            p = tkinter.filedialog.askdirectory(initialdir=Path.cwd())
 
         self.paths[directed_to] = p
 
         if all(v for v in self.paths.values()):
-            if self.paths['input'] != self.paths['output']:
-                self.convert_button['state'] = 'normal'
-                return
+            self.convert_button['state'] = 'normal'
 
-    def change_convert_ready_status(self, _type: str, var: int):
+    def image_conversion_type(self, in_out: str, image_type: str) -> None:
+        self.selected_image_types[in_out] = image_type
+        print(in_out, image_type, self.selected_image_types)
+
+    def change_convert_ready_status(self, _type: str, var: int) -> None:
         self.paths = {'input': False, 'output': False}
         self.l1['fg'] = 'green'
         self.l1['text'] = f'Selecting for {_type}.'
-        self.files = var
+        self.file_s = var
         self.b1['state'], self.b2['state'] = 'normal', 'normal'
         self.convert_button['state'] = 'disabled'
 
-    def file_conversion(self):
+    def file_conversion(self) -> None:
         print(self.paths)
+        return
+        answer = tkmb.askokcancel(
+            'Conversion Confirmation',
+            'Are you sure you want these image(s) to be converted?')
+
+        if answer:
+            pass
 
 
 class AdvancedWindow(tk.Toplevel):
@@ -114,13 +139,13 @@ class AdvancedWindow(tk.Toplevel):
         self.e2.grid(row=3, column=1)
         self.e2.bind('<Return>', self.set_recursive_amount)
 
-    def set_thread_amount(self, event):
+    def set_thread_amount(self, event) -> None:
         self.master.thread_amount = self.thread_amount.get()
 
-    def activate_resursiveness(self):
+    def activate_resursiveness(self) -> None:
         self.e2['state'] = 'normal'
 
-    def set_recursive_amount(self, event):
+    def set_recursive_amount(self, event) -> None:
         self.master.recursive_amount = self.recursive_folders.get()
 
 
